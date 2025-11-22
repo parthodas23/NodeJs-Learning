@@ -1,8 +1,10 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import cors from "cors";
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
 const users = [
   {
@@ -40,6 +42,8 @@ app.post("/api/refresh", (req, res) => {
     const newAccessToken = generateAccessToken(user);
     const newRefreshToken = generateRefreshToken(user);
 
+    refreshTokens.push(newRefreshToken);
+
     res.status(200).json({
       NewAccessToken: newAccessToken,
       NewRefreshToken: newRefreshToken,
@@ -66,9 +70,13 @@ const verify = (req, res, next) => {
 };
 
 const generateAccessToken = (user) => {
-  return jwt.sign({ id: user.id, username: user.username }, "secret_key_321", {
-    expiresIn: "15m",
-  });
+  return jwt.sign(
+    { id: user.id, username: user.username, isAdmin: user.isAdmin },
+    "secret_key_321",
+    {
+      expiresIn: "5s",
+    }
+  );
 };
 const generateRefreshToken = (user) => {
   return jwt.sign({ id: user.id, username: user.username }, "secret_key_321");
@@ -82,7 +90,8 @@ app.post("/api/login", (req, res) => {
   );
 
   if (!user) {
-    res.status(403).json("User data isn't correct");
+    // err time need to be return otherwise the code will be running
+    return res.status(403).json("User data isn't correct");
   }
 
   const accessToken = generateAccessToken(user);
@@ -97,7 +106,10 @@ app.post("/api/login", (req, res) => {
 });
 
 app.delete("/api/users/:userId", verify, (req, res) => {
-  if (req.user.id === parseInt(req.params.userId)) {
+  const isOwner = req.user.id === parseInt(req.params.userId);
+  const isAdmin = req.user.isAdmin;
+
+  if (isOwner || isAdmin) {
     res.status(200).json("User has been deleted");
   } else {
     res.status(403).json("You're not allowed to delete this user.");
