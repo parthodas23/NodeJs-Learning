@@ -1,11 +1,10 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { config } from "dotenv";
 import { jwtDecode } from "jwt-decode";
 const App = () => {
   const [username, setUsername] = useState(null);
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState(null);
   const [user, setUser] = useState("");
 
   const [success, setSuccess] = useState(false);
@@ -13,7 +12,7 @@ const App = () => {
 
   const refreshToken = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/refresh", {
+      let res = await axios.post("http://localhost:5000/api/refresh", {
         token: user.RefreshToken,
       });
       setUser({
@@ -26,14 +25,14 @@ const App = () => {
       console.log(error);
     }
   };
-  const axiosJWT = axios.create();
 
-  axiosJWT.interceptors.request.use(
+  const JWTaxios = axios.create();
+  JWTaxios.interceptors.request.use(
     async (config) => {
-      const time = new Date();
+      const currTime = new Date();
       const decoded = jwtDecode(user.AccessToken);
 
-      if (decoded.exp * 1000 < time.getTime()) {
+      if (decoded.exp * 1000 < currTime.getTime()) {
         let data = await refreshToken();
         config.headers["authorization"] = "Bearer " + data.NewAccessToken;
       }
@@ -43,7 +42,6 @@ const App = () => {
       return Promise.reject(error);
     }
   );
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -51,69 +49,65 @@ const App = () => {
         username,
         password,
       });
-      console.log("Login Successfull", res.data);
       setUser(res.data);
     } catch (error) {
-      console.log("Something went wrong", error);
+      console.log("Error happen", error);
     }
   };
 
   const handleDelete = async (userId) => {
-    setError(false);
     setSuccess(false);
-
+    setError(false);
     try {
-      await axiosJWT.delete("http://localhost:5000/api/users/" + userId, {
+      await JWTaxios.delete("http://localhost:5000/api/users/" + userId, {
         headers: { authorization: "Bearer " + user.AccessToken },
       });
       setSuccess(true);
     } catch (error) {
+      console.log(error);
       setError(true);
     }
   };
-
   return (
     <div>
       {user ? (
-        <div className="w-full bg-white h-screen flex justify-center items-center ">
-          <div className="w-[400px] bg-white shadow-lg p-8 border border-gray-200 rounded-2xl">
-            <h3 className="text-xl text-center text-gray-500 mb-4">
-              {`Welcome to the ${user.isAdmin ? `Admin` : "User"} dashboard ${
-                user.Username
-              }`}
-            </h3>
-            <p className="font-semibold text-red-400 mb-4">Delete Users:</p>
-            <div className="flex flex-col gap-6 items-center">
+        <div className="w-full bg-white flex h-screen justify-center items-center ">
+          <div className="w-[400px] bg-white shadow-lg p-8 border border-gray-200 rounded-2xl ">
+            <h2 className="text-center text-gray-400 text-xl mb-4">
+              Welcome to the {user.isAdmin ? "Admin" : "User"} dashboard{" "}
+              {user.Username}
+            </h2>
+            <p className="font-semibold text-red-400">Delete User:</p>
+            <div className="flex flex-col gap-4 rounded-2xl justify-center items-center ">
               <button
                 onClick={() => handleDelete(1)}
-                className="w-fit py-2 px-4 text-gray-600 bg-red-200 rounded-lg cursor-pointer"
+                className="bg-red-300 py-2 px-2 rounded-2xl w-fit text-white cursor-pointer hover:bg-red-400"
               >
-                Delete Partha das
+                Delete Admin
               </button>
               <button
                 onClick={() => handleDelete(2)}
-                className="w-fit py-2 px-4 text-center bg-red-200 rounded-lg text-gray-600 cursor-pointer"
+                className="bg-red-300 py-2 px-2 rounded-2xl w-fit text-white cursor-pointer hover:bg-red-400"
               >
-                Delete Pritha das
+                Delete Pritha
               </button>
-              {error && (
-                <span className="text-red-500">
-                  You're not allowed to delete this user!
-                </span>
-              )}
-
-              {success && (
-                <span className="text-green-400">
-                  User has been successfully deleted..........
-                </span>
-              )}
             </div>
+            {success && (
+              <div className="text-center text-green-400 m-3">
+                User has been successfully deleted.
+              </div>
+            )}
+            {error && (
+              <div className="text-center text-red-500 m-3">
+                You're not allowed to delete this user.
+              </div>
+            )}
           </div>
         </div>
       ) : (
-        <div className="w-full h-screen flex justify-center items-center bg-white">
-          <div className="w-[320px] bg-white shadow-lg p-8 rounded-2xl border border-gray-200">
-            <h2 className="text-xl text-teal-500 font-semibold text-center mb-5">
+        <div className="w-full flex h-screen justify-center items-center bg-white  ">
+          <div className="w-[320px] bg-white shadow-lg border border-gray-200 p-8 rounded-2xl ">
+            <h2 className="text-xl font-semibold text-teal-400 text-center mb-4">
               Api Login
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -121,18 +115,17 @@ const App = () => {
                 type="text"
                 placeholder="username"
                 required
+                className="outline-none py-2 px-1 border-b border-gray-300 focus:border-teal-300"
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full py-2 px-1 border-b border-gray-300 outline-none focus:border-teal-500 "
               />
               <input
                 type="password"
                 placeholder="password"
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full py-2 px-1 border-b border-gray-300 outline-none focus:border-teal-500"
                 required
+                className="outline-none py-2 px-1 border-b border-gray-300 focus:border-teal-300"
+                onChange={(e) => setPassword(e.target.value)}
               />
-
-              <button className="w-full text-white py-2 bg-teal-500 rounded-lg hover:bg-teal-600 transition mt-4 cursor-pointer">
+              <button className="bg-teal-500 text-white px-1 py-2 rounded-lg hover:bg-teal-600 mt-5 cursor-pointer">
                 Login
               </button>
             </form>

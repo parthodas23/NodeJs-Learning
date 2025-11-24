@@ -49,8 +49,6 @@ app.post("/api/refresh", (req, res) => {
       NewRefreshToken: newRefreshToken,
     });
   });
-
-  re;
 });
 
 const verify = (req, res, next) => {
@@ -79,7 +77,10 @@ const generateAccessToken = (user) => {
   );
 };
 const generateRefreshToken = (user) => {
-  return jwt.sign({ id: user.id, username: user.username }, "secret_key_321");
+  return jwt.sign(
+    { id: user.id, username: user.username, isAdmin: user.isAdmin },
+    "secret_key_321"
+  );
 };
 
 app.post("/api/login", (req, res) => {
