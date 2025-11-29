@@ -1,31 +1,36 @@
 import { Router } from "express";
-import User from "../models/User.js";
-import bcrypt from "bcrypt";
-import JWT from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 const router = Router();
+import User from "../models/User.js";
+import JWT from "jsonwebtoken";
 
 router.post("/register", async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, email, password } = req.body;
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
-  const newUser = new User({ username, email, password: hashedPassword });
+
   try {
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
     const savedUser = await newUser.save();
     res.status(200).json(savedUser);
   } catch (error) {
-    return res.status(500).json(error);
+    res.status(500).json(error);
   }
 });
 
 router.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ username: req.body.username });
-    if (!user) return res.status(500).json("Wrong credentials.");
+
+    if (!user) return res.status(500).json("Wrong Credentials.");
 
     const isMatch = await bcrypt.compare(req.body.password, user.password);
-    if (!isMatch) {
-      return res.status(500).json("Wrong credentials.");
-    }
+    if (!isMatch) return res.status(500).json("Wrong credentials.");
+
     const accessToken = JWT.sign(
       { id: user._id, isAdmin: user.isAdmin },
       process.env.JWT_SEC,
