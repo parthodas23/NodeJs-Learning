@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node Practice/index.js",
-    "dev": "nodemon Practice/index.js"
+    "start": "node Projects/E-Comerce_Api/index.js",
+    "dev": "nodemon Projects/E-Comerce_Api/index.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
